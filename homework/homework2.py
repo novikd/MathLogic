@@ -4,7 +4,7 @@ fin = open("hw2.proof", "r")
 fout = open("hw2.out", "w")
 
 line = fin.readline().rstrip()
-# print(line, file=fout)
+
 list = line.split("|-")
 assumptions = set()
 last = Expression
@@ -17,8 +17,8 @@ for i in range(len(line)):
             print(line[i], ",", sep="", end=" ", file=fout)
         elif i == len(line) - 2:
             print(line[i], end=" ", file=fout)
-        # assumptions[parseExp(line[i])] = i + 1
-print("|-", line[-1], "->", list[1], file=fout)
+
+print("|- (", line[-1], ") -> (", list[1], ")", file=fout)
 
 expressions = {}
 list = []
@@ -47,6 +47,7 @@ while True:
         print(tmp2, file=fout)
         print(tmp3, file=fout)
 
+    # Проверка на предположение
     if state == 0:
         if temp in assumptions:
             # print("Assumption", file=fout)
@@ -55,6 +56,7 @@ while True:
             print(temp, file=fout)
             print(Implication(last, temp), file=fout)
 
+    # Проверка на аксиому
     if state == 0:
         for i in range(len(axiomsExp)):
             if is_axiom(temp, axiomsExp[i]):
@@ -65,7 +67,6 @@ while True:
                 print(Implication(last, temp), file=fout)
                 break
 
-    # TODO: rewrite creating an answer for Modus Ponens case
     if state == 0:
         for i in range(len(list) - 1, -1, -1):
             tmp = Implication(list[i], temp)
@@ -74,16 +75,19 @@ while True:
                 num = expressions[list[i]], expressions[tmp]
                 break
 
+    # Вывод в случае, когда выражение было получено по правилу Modus Ponens
     if state == 2:
         # print("Modus Ponens", file=fout)
         first, second = num
-        print("(", last, "->", list[first] , end="", file=fout)
-        print(") -> ( ", end="", file=fout)
-        print(last, "-> (", list[second], ")", end = "", file=fout)
-        print(") -> (", last, "->", line, ")", file = fout)
-        print("( (", last, ") -> (", list[second], ") ) -> ", end="", file=fout)
-        print("(", last , "->", line, ")", file = fout)
-        print("(", last , "->", line, ")", file = fout)
+        tmp1 = Implication(last, list[first])
+        tmp2 = Implication(last, list[second])
+        tmp3 = Implication(last, temp)
+        # Схема аксиом 2
+        print(Implication(tmp1, Implication(tmp2, tmp3)), file=fout)
+        # Modus Ponens
+        print(Implication(tmp2, tmp3), file=fout)
+        # Modus Ponens
+        print(tmp3, file=fout)
 
     expressions[temp] = line_number
     list.append(temp)

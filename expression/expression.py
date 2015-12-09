@@ -33,7 +33,7 @@ class Not(Unary):
         self.hash = (value.__hash__() * 3 + 7 * self.name.__hash__()) % mod
 
     def __str__(self):
-        return "(! " + self.val.__str__() + ")"
+        return "(! " + self.val.__str__() + " )"
 
 class Binary(Expression):
     def __init__(self, left, right):
@@ -62,6 +62,7 @@ class Disjuction(Binary):
     def __init__(self, left, right):
         super().__init__(left, right)
 
+# Старый метод, больше не используется (Можно не читать)
 def match(first, second) -> (bool, dict):
     if type(second) is Var:
         return True, {second.val: first}
@@ -88,7 +89,10 @@ def match(first, second) -> (bool, dict):
         return False, {}
 
 def new_match(exp, axiom, dictionary):
+    # Словарь передается по ссылке, поэтому нет смысла его копировать
     if type(axiom) is Var:
+        # Присвоение переменной из аксиомы значения
+        # Если эта переменная уже была проинициализированна, то возвращается False
         if axiom in dictionary:
             if dictionary[axiom] != exp:
                 return False
@@ -102,17 +106,15 @@ def new_match(exp, axiom, dictionary):
             return new_match(exp.val, axiom.val, dictionary)
         else:
             sub = new_match(exp.left, axiom.left, dictionary)
+            # В sub хранится значение удалось ли удачно сделать подстановку в левом поддереве дерева разбора выражения
             if sub:
                 sub = new_match(exp.right, axiom.right, dictionary)
 
             return sub
     else:
+        # Тип выражений не совпал
         return False
 
+# Функция проверяет является выражение exp аксиомой checking_axiom
 def is_axiom(exp, checking_axiom):
-    # check, sub = match(exp, checking_axiom)
-    # if check:
-    #     return True
-    # else:
-    #     return False
     return new_match(exp, checking_axiom, {})

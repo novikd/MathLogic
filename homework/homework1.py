@@ -15,12 +15,10 @@ if len(list) == 2:
 else:
     line = list
 
-# assumptions = [parseExp(string) for string in line]
 expressions = {}
 list = []
 line_number = 1
 while True:
-    # print(line_number)
     line = fin.readline().rstrip()
     if not line:
         break
@@ -30,15 +28,12 @@ while True:
     state = 0
     num = -1
 
+    # Проверяем является ли выражение предположением
     if temp in assumptions:
         state = 1
         num = assumptions[temp]
 
-    # for i in range(len(assumptions)):
-    #     if temp == assumptions[i]:
-    #         state = 1
-    #         num = i + 1
-
+    # Проверяем является ли выражение аксиомой
     if state == 0:
         for i in range(len(axiomsExp)):
             if is_axiom(temp, axiomsExp[i]):
@@ -46,6 +41,7 @@ while True:
                 num = i + 1
                 break
 
+    # Проверка на Modus Ponens
     if state == 0:
         for i in range(len(list) - 1, -1, -1):
             tmp = Implication(list[i], temp)
@@ -53,12 +49,6 @@ while True:
                 state = 3
                 num = expressions[list[i]], expressions[tmp]
                 break
-
-    # for i in range(len(expressions) - 1, -1, -1):
-    #     for j in range(len(expressions) - 1, -1, -1):
-    #         if Implication(expressions[j], temp) == expressions[i]:
-    #             state = 3
-    #             num = j + 1, i + 1
 
     print("(", line_number, ") ", line, " ", end="", file=fout)
     if state == 0:
