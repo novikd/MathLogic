@@ -1,4 +1,4 @@
-from expression.axioms import *
+from expression.utils import *
 
 fin = open("hw1.proof", "r")
 fout = open("hw1.out", "w")

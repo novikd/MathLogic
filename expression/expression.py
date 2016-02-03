@@ -1,9 +1,8 @@
 mod = (10 ** 9) + 9
 
+
 class Expression(object):
     hash = 0
-    def match(self, axiom):
-        raise NotImplementedError
 
     def __hash__(self):
         return self.hash
@@ -11,12 +10,11 @@ class Expression(object):
     def __eq__(self, other):
         return self.__hash__() == other.__hash__()
 
+
 class Unary(Expression):
     def __init__(self, value):
         self.val = value
 
-    # def __eq__(self, other):
-    #     return type(other) is type(self) and self.val == other.val
 
 class Var(Unary):
     def __init__(self, value):
@@ -26,14 +24,23 @@ class Var(Unary):
     def __str__(self):
         return self.val
 
+    def eval(self, dictionary):
+        return dictionary[self.val]
+
+
 class Not(Unary):
     name = "!"
+
     def __init__(self, value):
         super().__init__(value)
         self.hash = (value.__hash__() * 3 + 7 * self.name.__hash__()) % mod
 
     def __str__(self):
         return "(! " + self.val.__str__() + " )"
+
+    def eval(self, dictionary):
+        return not self.val.eval(dictionary)
+
 
 class Binary(Expression):
     def __init__(self, left, right):
@@ -42,25 +49,44 @@ class Binary(Expression):
         self.hash = (3 * self.name.__hash__() + 11 * left.__hash__() + 23 * right.__hash__()) % mod
 
     def __str__(self):
-        return "( " + self.left.__str__()  + self.name + self.right.__str__() + " )"
+        return "( " + self.left.__str__() + self.name + self.right.__str__() + " )"
 
-    # def __eq__(self, other):
-    #     return type(other) is type(self) and self.left == other.left and self.right == other.right
+    def calc(self, left, right):
+        raise NotImplementedError
+
+    def eval(self, dictionary):
+        return self.calc(self.left.eval(dictionary), self.right.eval(dictionary))
+
 
 class Implication(Binary):
     name = " -> "
+
     def __init__(self, left, right):
         super().__init__(left, right)
+
+    def calc(self, left, right):
+        return (not left) or right
+
 
 class Conjuction(Binary):
     name = " & "
+
     def __init__(self, left, right):
         super().__init__(left, right)
 
+    def calc(self, left, right):
+        return left and right
+
+
 class Disjuction(Binary):
     name = " | "
+
     def __init__(self, left, right):
         super().__init__(left, right)
+
+    def calc(self, left, right):
+        return left or right
+
 
 # Старый метод, больше не используется (Можно не читать)
 def match(first, second) -> (bool, dict):
@@ -87,6 +113,7 @@ def match(first, second) -> (bool, dict):
                 return True, dict2
     else:
         return False, {}
+
 
 def new_match(exp, axiom, dictionary):
     # Словарь передается по ссылке, поэтому нет смысла его копировать
@@ -115,6 +142,40 @@ def new_match(exp, axiom, dictionary):
         # Тип выражений не совпал
         return False
 
+
 # Функция проверяет является выражение exp аксиомой checking_axiom
 def is_axiom(exp, checking_axiom):
     return new_match(exp, checking_axiom, {})
+
+
+def get_variables(exp, dictionary: dict):
+    if type(exp) is Var:
+        if exp.val not in dictionary:
+            dictionary[exp.val] = len(dictionary)
+    elif type(exp) is Not:
+        get_variables(exp.val, dictionary)
+    else:
+        get_variables(exp.left, dictionary)
+        get_variables(exp.right, dictionary)
+
+
+# Функция проверяет является ли выражение тавтологией
+def is_tautology(exp):
+    temp = dict()
+    get_variables(exp, temp)
+    dictionary = dict()
+    for e in temp:
+        dictionary[temp[e]] = e
+
+    for bits in range(0, 2 ** len(dictionary)):
+        temp = dict()
+        for j in range(0, len(dictionary)):
+            if bits & (2 ** j) == 0:
+                temp[dictionary[j]] = False
+            else:
+                temp[dictionary[j]] = True
+
+        if not exp.eval(temp):
+            return temp
+
+    return dict()

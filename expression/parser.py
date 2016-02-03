@@ -1,5 +1,6 @@
 from expression.expression import *
 
+
 def addSpaces(string):
     result = ""
     i = 0
@@ -16,11 +17,13 @@ def addSpaces(string):
 
     return result
 
+
 def parseExp(string):
     string = addSpaces(string)
     array = string.split()
     result, seq = parseImplication(array)
     return result
+
 
 def parseImplication(seq):
     result, seq = parseDisjuction(seq)
@@ -29,12 +32,14 @@ def parseImplication(seq):
         result = Implication(result, tmp)
     return result, seq
 
+
 def parseDisjuction(seq):
     result, seq = parseConjuction(seq)
     while len(seq) > 0 and seq[0] == "|":
         tmp, seq = parseConjuction(seq[1:])
         result = Disjuction(result, tmp)
     return result, seq
+
 
 def parseConjuction(seq):
     result, seq = parseNot(seq)
@@ -43,6 +48,7 @@ def parseConjuction(seq):
         result = Conjuction(result, tmp)
     return result, seq
 
+
 def parseNot(seq):
     if seq[0] == "!":
         result, seq = parseNot(seq[1:])
@@ -50,6 +56,7 @@ def parseNot(seq):
     else:
         result, seq = parseUnary(seq)
     return result, seq
+
 
 def parseUnary(seq):
     if seq[0] == "(":
