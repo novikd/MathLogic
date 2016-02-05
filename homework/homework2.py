@@ -1,6 +1,6 @@
 from expression.utils import *
 
-fin = open("hw2.proof", "r")
+fin = open("hw2.in", "r")
 fout = open("hw2.out", "w")
 
 line = fin.readline().rstrip()

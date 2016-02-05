@@ -24,6 +24,9 @@ class Var(Unary):
     def __str__(self):
         return self.val
 
+    def rehash(self):
+        self.hash = self.val.__hash__()
+
     def eval(self, dictionary):
         return dictionary[self.val]
 
@@ -33,10 +36,13 @@ class Not(Unary):
 
     def __init__(self, value):
         super().__init__(value)
-        self.hash = (value.__hash__() * 3 + 7 * self.name.__hash__()) % mod
+        self.rehash()
 
     def __str__(self):
         return "(! " + self.val.__str__() + " )"
+
+    def rehash(self):
+        self.hash = (3 * self.val.__hash__() ** 2 + 7 * self.name.__hash__()) % mod
 
     def eval(self, dictionary):
         return not self.val.eval(dictionary)
@@ -46,10 +52,13 @@ class Binary(Expression):
     def __init__(self, left, right):
         self.left = left
         self.right = right
-        self.hash = (3 * self.name.__hash__() + 11 * left.__hash__() + 23 * right.__hash__()) % mod
+        self.rehash()
 
     def __str__(self):
         return "( " + self.left.__str__() + self.name + self.right.__str__() + " )"
+
+    def rehash(self):
+        self.hash = (3 * self.name.__hash__() + 11 * self.left.__hash__()**3 + 23 * self.right.__hash__()**4) % mod
 
     def calc(self, left, right):
         raise NotImplementedError

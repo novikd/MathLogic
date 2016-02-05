@@ -1,3 +1,5 @@
 /expression/*
 !/expression/*.py
 .idea/*
+*.in
+*.out
