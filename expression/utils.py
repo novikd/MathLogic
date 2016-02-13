@@ -63,7 +63,7 @@ class Proof(object):
         for i in range(len(self.expressions)):
             if self.expressions[i] == self.assumptions[0]:
                 sub = {"A": self.expressions[i]}
-                addProof("Proofs/|-A->A.proof", new_expressions, sub)
+                addProof("Proofs/A_Implication_A.proof", new_expressions, sub)
                 continue
 
             if self.expressions[i] in self.assumptions or is_any_axiom(self.expressions[i]):
@@ -99,7 +99,7 @@ class Proof(object):
         self.expressions.append(createExpr("E->(A|B->C)", sub))
         self.expressions.append(createExpr("(A|B->C)", sub))
 
-        addProof("Proofs/A|!A.proof", self.expressions, sub)
+        addProof("Proofs/Aor!A.proof", self.expressions, sub)
         self.expressions.append(sub["C"])
         self.expression = sub["C"]
 
@@ -126,7 +126,7 @@ def createProof(expr, proof):
         A = createProof(expr.val, proof)
         sub = {"A": expr.val}
         if A:
-            addProof("Proofs/A|-!!A.proof", proof.expressions, sub)
+            addProof("Proofs/From_A_To_!!A.proof", proof.expressions, sub)
         return not A
     else:
         A = createProof(expr.left, proof)
