@@ -3,3 +3,4 @@
 .idea/*
 *.in
 *.out
+.DS_Store
