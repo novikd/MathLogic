@@ -17,7 +17,6 @@ def addSpaces(string):
 
     return result
 
-
 def parseExp(string):
     string = addSpaces(string)
     array = string.split()

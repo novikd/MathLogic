@@ -1,4 +1,5 @@
 from expression.parser import *
+from expression.formal_parser import *
 
 axioms = [
     "A -> (B -> A)",
@@ -13,8 +14,20 @@ axioms = [
     "!!A -> A"
 ]
 
-axiomsExp = [parseExp(string) for string in axioms]
+formal_axioms = [
+    "a=b->a'=b'",
+    "a=b->a=c->b=c",
+    "a'=b'->a=b",
+    "!(a'=0)",
+    "a+b'=(a+b)'",
+    "a+0=a",
+    "a*0=0",
+    "a*b'=a*b+a"
+]
 
+axiomsExp = [parseExp(string) for string in axioms]
+expression_parser = FormalParser()
+formalAxioms = [expression_parser.parseExpr(string) for string in formal_axioms]
 
 def is_any_axiom(expr):
     for i in range(len(axiomsExp)):
@@ -157,3 +170,63 @@ def createProof(expr, proof):
             return True
         else:
             return False
+
+
+def free_subtract(template, exp, var, locked, dictionary):
+    if type(template) is Var:
+        if template != var:
+            return template == exp
+        if template in locked:
+            return template == exp
+        else:
+            if template in dictionary:
+                return dictionary[template] == exp
+            else:
+                tmp = set()
+                get_free_variables(exp, set(), tmp)
+                if len(tmp.intersection(locked)) != 0:
+                    return False
+                dictionary[template] = exp
+                return True
+    elif type(template) is type(exp):
+        if type(template) is Any or type(template) is Exists:
+            locked.add(template.var)
+            result = free_subtract(template.val, exp.val, var, locked, dictionary)
+            locked.remove(template.var)
+            return result
+        elif type(template) is Predicate:
+            if len(template.val) != len(exp.val):
+                return False
+            for i in range(len(template.val)):
+                if not free_subtract(template.val[i], exp.val[i], var, locked, dictionary):
+                    return False
+            return True
+        elif isinstance(template, Unary):
+            return free_subtract(template.val, exp.val, var, locked, dictionary)
+        else:
+            if not free_subtract(template.left, exp.left, var, locked, dictionary):
+                return False
+            return free_subtract(template.right, exp.right, var, locked, dictionary)
+    else:
+        return False
+
+
+def is_axiom_any(expr):
+    if type(expr) is not Implication or type(expr.left) is not Any:
+        return False
+    return free_subtract(expr.left.val, expr.right, expr.left.var, set(), dict())
+
+
+def is_axiom_exists(expr):
+    if type(expr) is not Implication or type(expr.right) is not Exists:
+        return False
+    return free_subtract(expr.right.val, expr.left, expr.right.var, set(), dict())
+
+
+def is_any_formal_axiom(expr):
+    for axiom in formalAxioms:
+        if new_match(axiom, expr, set(), dict()):
+            return True
+    if is_axiom_any(expr) or is_axiom_exists(expr):
+        return True
+    return False

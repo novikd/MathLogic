@@ -3,4 +3,5 @@
 .idea/*
 *.in
 *.out
+test.py
 .DS_Store

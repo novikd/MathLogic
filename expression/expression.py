@@ -48,6 +48,72 @@ class Not(Unary):
         return not self.val.eval(dictionary)
 
 
+class Any(Unary):
+    name = "@"
+
+    def __init__(self, var, value):
+        super().__init__(value)
+        self.var = var
+        self.rehash()
+
+    def __str__(self):
+        return "(@ " + self.var.__str__() + " " + self.val.__str__() + " )"
+
+    def rehash(self):
+        self.hash = (17 * self.var.__hash__() ** 3 + 3 * self.val.__hash__() ** 2 + 7 * self.name.__hash__()) % mod
+
+
+class Exists(Unary):
+    name = "?"
+
+    def __init__(self, var, value):
+        super().__init__(value)
+        self.var = var
+        self.rehash()
+
+    def __str__(self):
+        return "(? " + self.var.__str__() + " " + self.val.__str__() + " )"
+
+    def rehash(self):
+        self.hash = (17 * self.var.__hash__() ** 3 + 3 * self.val.__hash__() ** 2 + 7 * self.name.__hash__()) % mod
+
+
+class Predicate(Unary):
+    def __init__(self, name,values):
+        self.name = name
+        super().__init__(values)
+        self.rehash()
+
+    def __str__(self):
+        result = self.name + "("
+        for i in range(len(self.val)):
+            if i == len(self.val) - 1:
+                result += self.val[i].__str__() + ")"
+            else:
+                result += self.val[i].__str__() + ", "
+        return result
+
+    def rehash(self):
+        self.hash = self.name.__hash__() % mod
+        for e in self.val:
+            self.hash *= 37
+            self.hash += e.__hash__()
+
+
+class Next(Unary):
+    name = "'"
+
+    def __init__(self, value):
+        super().__init__(value)
+        self.rehash()
+
+    def __str__(self):
+        return self.val.__str__() + self.name
+
+    def rehash(self):
+        self.hash = (self.val.__hash__() * 31 + self.name.__hash__()) % mod
+
+
 class Binary(Expression):
     def __init__(self, left, right):
         self.left = left
@@ -97,54 +163,45 @@ class Disjuction(Binary):
         return left or right
 
 
-# Старый метод, больше не используется (Можно не читать)
-def match(first, second) -> (bool, dict):
-    if type(second) is Var:
-        return True, {second.val: first}
-    elif type(first) is type(second):
-        if type(first) is Not:
-            return match(first.val, second.val)
-        else:
-            res1, dict1 = match(first.left, second.left)
-            res2, dict2 = match(first.right, second.right)
+class Equals(Binary):
+    name = " = "
 
-            if not res1 or not res2:
-                return False, {}
-
-            if type(dict1) is dict and type(dict2) is dict:
-                for key in dict1:
-                    if key in dict2 and dict1[key] != dict2[key]:
-                        return False, {}
-
-                for key in dict1:
-                    if key not in dict2:
-                        dict2[key] = dict1[key]
-                return True, dict2
-    else:
-        return False, {}
+    def __init__(self, left, right):
+        super().__init__(left, right)
 
 
-def new_match(exp, axiom, dictionary):
+class Sum(Binary):
+    name = " + "
+
+    def __init__(self, left, right):
+        super().__init__(left, right)
+
+
+class Mul(Binary):
+    name = " * "
+
+    def __init__(self, left, right):
+        super().__init__(left, right)
+
+
+def match(exp, axiom, dictionary):
     # Словарь передается по ссылке, поэтому нет смысла его копировать
     if type(axiom) is Var:
         # Присвоение переменной из аксиомы значения
         # Если эта переменная уже была проинициализированна, то возвращается False
         if axiom in dictionary:
-            if dictionary[axiom] != exp:
-                return False
-            else:
-                return True
+            return dictionary[axiom] == exp
         else:
             dictionary[axiom] = exp
             return True
     elif type(exp) is type(axiom):
-        if type(axiom) is Not:
-            return new_match(exp.val, axiom.val, dictionary)
+        if isinstance(axiom, Unary):
+            return match(exp.val, axiom.val, dictionary)
         else:
-            sub = new_match(exp.left, axiom.left, dictionary)
+            sub = match(exp.left, axiom.left, dictionary)
             # В sub хранится значение удалось ли удачно сделать подстановку в левом поддереве дерева разбора выражения
             if sub:
-                sub = new_match(exp.right, axiom.right, dictionary)
+                sub = match(exp.right, axiom.right, dictionary)
 
             return sub
     else:
@@ -154,18 +211,71 @@ def new_match(exp, axiom, dictionary):
 
 # Функция проверяет является выражение exp аксиомой checking_axiom
 def is_axiom(exp, checking_axiom):
-    return new_match(exp, checking_axiom, {})
+    return match(exp, checking_axiom, {})
 
 
 def get_variables(exp, dictionary: dict):
     if type(exp) is Var:
         if exp.val not in dictionary:
             dictionary[exp.val] = len(dictionary)
-    elif type(exp) is Not:
+    elif isinstance(exp, Unary):
         get_variables(exp.val, dictionary)
     else:
         get_variables(exp.left, dictionary)
         get_variables(exp.right, dictionary)
+
+
+def get_free_variables(exp, dictionary: set, result : set):
+    if type(exp) is Var:
+        if exp.val not in dictionary:
+            result.add(exp)
+    elif type(exp) is Predicate:
+        for e in exp.val:
+            get_free_variables(e, dictionary, result)
+    elif type(exp) is Any or type(exp) is Exists:
+        dictionary.add(exp.var)
+        get_free_variables(exp.val,dictionary, result)
+        dictionary.remove(exp.var)
+    elif isinstance(exp, Unary):
+        get_free_variables(exp.val, dictionary, result)
+    else:
+        get_free_variables(exp.left, dictionary, result)
+        get_free_variables(exp.right, dictionary, result)
+    return result
+
+
+# Функция проверяет можно ли получить выражение template из exp, сделав какую-то подстановку
+def new_match(template, exp, locked : set, dictionary):
+    if type(template) is Var:
+        if template in locked:
+            return template == exp
+        else:
+            if template in dictionary:
+                return dictionary[template] == exp
+            else:
+                dictionary[template] = exp
+                return True
+    elif type(template) is type(exp):
+        if type(template) is Any or type(template) is Exists:
+            locked.add(template.var)
+            result = new_match(template.val, exp.val, locked, dictionary)
+            locked.remove(template.var)
+            return result
+        elif type(template) is Predicate:
+            if len(template.val) != len(exp.val):
+                return False
+            for i in range(template.val):
+                if not new_match(template.val[i], exp.val[i], locked, dictionary):
+                    return False
+            return True
+        elif isinstance(template, Unary):
+            return new_match(template.val, exp.val, locked, dictionary)
+        else:
+            if not new_match(template.left, exp.left, locked, dictionary):
+                return False
+            return new_match(template.right, exp.right, locked, dictionary)
+    else:
+        return False
 
 
 # Функция проверяет является ли выражение тавтологией
