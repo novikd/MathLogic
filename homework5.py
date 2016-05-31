@@ -84,11 +84,34 @@ proofStep = ["a+b'=(a+b)'",
              ]
 
 proofEnd = ["a+o=d",
-            "(a+o=d)->(A->B->A)->(a+o=d)",
-            "(A->B->A)->(a+o=d)",
-            "(A->B->A)->@a(a+o=d)",
+            "(a+o=d)->(temp1->temp2->temp1)->(a+o=d)",
+            "(temp1->temp2->temp1)->(a+o=d)",
+            "(temp1->temp2->temp1)->@a(a+o=d)",
+            "(temp1->temp2->temp1)",
             "@a(a+o=d)",
             "@a(a+o=d)->(q+o=f)",
             "q+o=f"
             ]
 
+a, b = map(int, input().rstrip().split())
+result = a + b
+lhs = "0" + ("'" * a)
+rhs = "0" + ("'" * b)
+
+print("|-", lhs, "+", rhs, "=", "0" + ("'" * result), sep="")
+
+for line in proofPrefix:
+    print(line)
+
+currentO = "0"
+currentA = "a"
+for i in range(b):
+    for line in proofStep:
+        print(line.replace('o', currentO).replace('d', currentA))
+    currentO += "'"
+    currentA += "'"
+
+currentQ = "0" + ("'" * a)
+currentRes = "0" + ("'" * (a + b))
+for line in proofEnd:
+    print(line.replace('d', currentA).replace('o', currentO).replace('q', currentQ).replace('f', currentRes))

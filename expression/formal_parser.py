@@ -27,6 +27,8 @@ class FormalParser:
 
     def __readPredicateName(self):
         j = self.index
+        if not (self.string[j].isalpha() and self.string[j].isupper()):
+            return ""
         while j < len(self.string) and (
             self.string[j].isdigit() or (self.string[j].isalpha() and self.string[j].isupper())):
             j += 1
@@ -83,6 +85,9 @@ class FormalParser:
             result = self.__parseImplication()
             self.index += 1
             return result
+
+        temp = self.__readVarName()
+        return Var(temp)
 
     def __parsePredicate(self):
         word = self.__readPredicateName()

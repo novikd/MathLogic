@@ -57,7 +57,7 @@ class Any(Unary):
         self.rehash()
 
     def __str__(self):
-        return "(@ " + self.var.__str__() + " " + self.val.__str__() + " )"
+        return "(@" + self.var.__str__() + self.val.__str__() + ")"
 
     def rehash(self):
         self.hash = (17 * self.var.__hash__() ** 3 + 3 * self.val.__hash__() ** 2 + 7 * self.name.__hash__()) % mod
@@ -72,7 +72,7 @@ class Exists(Unary):
         self.rehash()
 
     def __str__(self):
-        return "(? " + self.var.__str__() + " " + self.val.__str__() + " )"
+        return "(?" + self.var.__str__() + self.val.__str__() + ")"
 
     def rehash(self):
         self.hash = (17 * self.var.__hash__() ** 3 + 3 * self.val.__hash__() ** 2 + 7 * self.name.__hash__()) % mod
@@ -90,7 +90,7 @@ class Predicate(Unary):
             if i == len(self.val) - 1:
                 result += self.val[i].__str__() + ")"
             else:
-                result += self.val[i].__str__() + ", "
+                result += self.val[i].__str__() + ","
         return result
 
     def rehash(self):
@@ -121,7 +121,7 @@ class Binary(Expression):
         self.rehash()
 
     def __str__(self):
-        return "( " + self.left.__str__() + self.name + self.right.__str__() + " )"
+        return "(" + self.left.__str__() + self.name + self.right.__str__() + ")"
 
     def rehash(self):
         self.hash = (3 * self.name.__hash__() + 11 * self.left.__hash__()**3 + 23 * self.right.__hash__()**4) % mod
@@ -134,7 +134,7 @@ class Binary(Expression):
 
 
 class Implication(Binary):
-    name = " -> "
+    name = "->"
 
     def __init__(self, left, right):
         super().__init__(left, right)
@@ -144,7 +144,7 @@ class Implication(Binary):
 
 
 class Conjuction(Binary):
-    name = " & "
+    name = "&"
 
     def __init__(self, left, right):
         super().__init__(left, right)
@@ -154,7 +154,7 @@ class Conjuction(Binary):
 
 
 class Disjuction(Binary):
-    name = " | "
+    name = "|"
 
     def __init__(self, left, right):
         super().__init__(left, right)
@@ -164,21 +164,21 @@ class Disjuction(Binary):
 
 
 class Equals(Binary):
-    name = " = "
+    name = "="
 
     def __init__(self, left, right):
         super().__init__(left, right)
 
 
 class Sum(Binary):
-    name = " + "
+    name = "+"
 
     def __init__(self, left, right):
         super().__init__(left, right)
 
 
 class Mul(Binary):
-    name = " * "
+    name = "*"
 
     def __init__(self, left, right):
         super().__init__(left, right)
@@ -225,7 +225,7 @@ def get_variables(exp, dictionary: dict):
         get_variables(exp.right, dictionary)
 
 
-def get_free_variables(exp, dictionary: set, result : set):
+def get_free_variables(exp, dictionary: dict, result : set):
     if type(exp) is Var:
         if exp.val not in dictionary:
             result.add(exp)
@@ -233,9 +233,14 @@ def get_free_variables(exp, dictionary: set, result : set):
         for e in exp.val:
             get_free_variables(e, dictionary, result)
     elif type(exp) is Any or type(exp) is Exists:
-        dictionary.add(exp.var)
+        if exp.var in dictionary:
+            dictionary[exp.var] += 1
+        else:
+            dictionary[exp.var] = 1
         get_free_variables(exp.val,dictionary, result)
-        dictionary.remove(exp.var)
+        dictionary[exp.var] -= 1
+        if dictionary[exp.var] == 0:
+            dictionary.pop(exp.var)
     elif isinstance(exp, Unary):
         get_free_variables(exp.val, dictionary, result)
     else:
