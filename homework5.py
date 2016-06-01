@@ -84,10 +84,10 @@ proofStep = ["a+b'=(a+b)'",
              ]
 
 proofEnd = ["a+o=d",
-            "(a+o=d)->(temp1->temp2->temp1)->(a+o=d)",
-            "(temp1->temp2->temp1)->(a+o=d)",
-            "(temp1->temp2->temp1)->@a(a+o=d)",
-            "(temp1->temp2->temp1)",
+            "(a+o=d)->(A->B->A)->(a+o=d)",
+            "(A->B->A)->(a+o=d)",
+            "(A->B->A)->@a(a+o=d)",
+            "(A->B->A)",
             "@a(a+o=d)",
             "@a(a+o=d)->(q+o=f)",
             "q+o=f"
