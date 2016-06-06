@@ -29,6 +29,7 @@ axiomsExp = [parseExp(string) for string in axioms]
 expression_parser = FormalParser()
 formalAxioms = [expression_parser.parseExpr(string) for string in formal_axioms]
 
+
 def is_any_axiom(expr):
     for i in range(len(axiomsExp)):
         if is_axiom(expr, axiomsExp[i]):
@@ -39,8 +40,13 @@ def is_any_axiom(expr):
 
 def subtract(expr, values):
     if type(expr) is Var:
-        return values[expr.val]
-    elif type(expr) is Not:
+        return expr
+    elif type(expr) is Predicate:
+        if expr.name in values:
+            return values[expr.name]
+        for i in range(len(expr.val)):
+            expr[i] = subtract(expr.val[i], values)
+    elif isinstance(expr, Unary):
         expr.val = subtract(expr.val, values)
     else:
         expr.left = subtract(expr.left, values)
@@ -50,8 +56,8 @@ def subtract(expr, values):
     return expr
 
 
-def createExpr(string, values):
-    return subtract(parseExp(string), values)
+def createExpr(parser : FormalParser, string, values):
+    return subtract(parser.parseExpr(string), values)
 
 
 def addProof(address, proof, values):
@@ -183,7 +189,7 @@ def free_subtract(template, exp, var, locked, dictionary):
                 return dictionary[template] == exp
             else:
                 tmp = set()
-                get_free_variables(exp, set(), tmp)
+                get_free_variables(exp, dict(), tmp)
                 if len(tmp.intersection(locked)) != 0:
                     return False
                 dictionary[template] = exp

@@ -55,28 +55,28 @@ def solve():
                         if expression.right.var not in free_variables:
                             check = 3, tmp
                         else:
-                            error_string = "[Применение правил с кваторами, используещее свободную переменную " \
+                            error_string = "[Применение правил с кватором всеобщности, используещее свободную переменную " \
                                            + expression.right.var.__str__() + " из предположений.]"
                     else:
-                        error_string = "[Ошибка применения правил вывода с кванторами. Переменная " \
+                        error_string = "[Ошибка применения правил вывода с квантором всеобщности. Переменная " \
                                        + expression.right.var.__str__() + " входит свободно.]"
 
         if check[0] == -1:
             if type(expression) is Implication and type(expression.left) is Exists:
                 tmp = Implication(expression.left.val, expression.right)
                 if tmp in expressions:
-                    if expression.right.var not in get_free_variables(expression.right, dict(), set()):
+                    if expression.left.var not in get_free_variables(expression.right, dict(), set()):
                         if expression.left.var not in free_variables:
                             check = 4, tmp
                         else:
-                            error_string = "[Применение правил с кваторами, используещее свободную переменную " \
+                            error_string = "[Применение правил с кватором существования, используещее свободную переменную " \
                                            + expression.left.var.__str__() + " из предположений.]"
                     else:
-                        error_string = "[Ошибка применения правил вывода с кванторами. Переменная " \
+                        error_string = "[Ошибка применения правил вывода с квантором существования. Переменная " \
                                        + expression.right.var.__str__() + "входит свободно.]"
 
         if check[0] == -1:
-            print("Вывод некорректен, начиная с формулы №", line_number, ":", error_string, end="\n", file=fout)
+            print("Вывод некорректен, начиная с формулы №", line_number, ":", error_string, "\n", line, end="\n", file=fout)
             break
         else:
             expressions.add(expression)
@@ -85,7 +85,16 @@ def solve():
 
     if check[0] != -1:
         print("Вывод корректен")
+        semicolomn = 0
+        for e in assumptions:
+            if e != last_assumption:
+                print(e, sep="", end="", file=fout)
+                if semicolomn < len(assumptions) - 1:
+                    print(",", sep="", end="", file=fout)
+                semicolomn += 1
+
         if len(assumptions) > 0:
+            print("|-", Implication(last_assumption, main_expression), sep="", end="\n", file=fout)
             fany = open("Proofs/any_rule.proof", "r")
             any_proof = fany.readlines()
             fany.close()
@@ -124,14 +133,19 @@ def solve():
                     print(tmp2, file=fout)
                 elif prior[i][0] == 3:
                     # Any
-                    mapping = {"A" : last_assumption, "B" : expression_list[i].left, "C" : expression_list[i].right}
+                    mapping = {"A" : last_assumption, "B" : expression_list[i].left, "C" : expression_list[i].right.val}
                     for str in any_proof:
-                        print(createExpr(str, mapping), file=fout)
+                        tempExpr = createExpr(parser, str.rstrip(), mapping)
+                        print(tempExpr, file=fout)
                 elif prior[i][0] == 4:
                     # Exists
-                    mapping = {"A" : last_assumption, "B" : expression_list[i].left, "C" : expression_list[i].right}
+                    mapping = {"A" : last_assumption, "B" : expression_list[i].left.val, "C" : expression_list[i].right}
                     for str in exists_proof:
-                        print(createExpr(str, mapping), file=fout)
+                        print(createExpr(parser, str, mapping), file=fout)
+        else:
+            print("|-", main_expression, sep="", file=fout)
+            for expr in expression_list:
+                print(expr, file=fout)
 
     fin.close()
     fout.close()

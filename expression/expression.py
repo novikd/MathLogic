@@ -39,7 +39,7 @@ class Not(Unary):
         self.rehash()
 
     def __str__(self):
-        return "(! " + self.val.__str__() + " )"
+        return "(!" + self.val.__str__() + ")"
 
     def rehash(self):
         self.hash = (3 * self.val.__hash__() ** 2 + 7 * self.name.__hash__()) % mod
@@ -85,6 +85,8 @@ class Predicate(Unary):
         self.rehash()
 
     def __str__(self):
+        if len(self.val) == 0:
+            return self.name
         result = self.name + "("
         for i in range(len(self.val)):
             if i == len(self.val) - 1:
@@ -227,13 +229,13 @@ def get_variables(exp, dictionary: dict):
 
 def get_free_variables(exp, dictionary: dict, result : set):
     if type(exp) is Var:
-        if exp.val not in dictionary:
+        if exp not in dictionary.keys():
             result.add(exp)
     elif type(exp) is Predicate:
         for e in exp.val:
             get_free_variables(e, dictionary, result)
     elif type(exp) is Any or type(exp) is Exists:
-        if exp.var in dictionary:
+        if exp.var in dictionary.keys():
             dictionary[exp.var] += 1
         else:
             dictionary[exp.var] = 1
