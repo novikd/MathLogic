@@ -15,9 +15,11 @@ def solve():
         tmp = parser.parse()
         last_assumption = tmp
         assumptions.add(tmp)
-        get_free_variables(tmp, dict(), free_variables)
+        # get_free_variables(tmp, dict(), free_variables)
         if parser.index < len(parser.string) and parser.string[parser.index] == ',':
             parser.index += 1
+    if len(assumptions) > 0:
+        get_free_variables(last_assumption, dict(), free_variables)
     parser.index += 2
     main_expression = parser.parseExpr(main_expression)
     expressions = set()
@@ -28,6 +30,8 @@ def solve():
 
     while True:
         line_number += 1
+        if line_number % 1000 == 0:
+            print("Обработано", line_number, "строк")
         error_string = "[Недоказаное утверждение]"
         line = fin.readline().rstrip()
         if not line:
@@ -37,6 +41,16 @@ def solve():
 
         if is_any_axiom(expression) or is_any_formal_axiom(expression):
             check = 0, None
+
+        if check[0] == -1:
+            # 9 predicate axiom
+            if type(expression) is Implication and type(expression.left) is Conjuction \
+                    and type(expression.left.right) is Any and type(expression.left.right.val) is Implication:
+                if expression.left.right.var.val in get_free_variables(expression.right, dict(), set()) \
+                        and free_subtract(expression.right, expression.left.right.val.right, Var(expression.left.right.var), set(), dict()) \
+                        and free_subtract(expression.right, expression.left.left, Var(expression.left.right.var), set(), dict()) \
+                        and expression.right == expression.left.right.val.left:
+                    check = 0, None
 
         if check[0] == -1 and expression in assumptions:
             check = 1, None
@@ -51,8 +65,8 @@ def solve():
             if type(expression) is Implication and type(expression.right) is Any:
                 tmp = Implication(expression.left, expression.right.val)
                 if tmp in expressions:
-                    if expression.right.var not in get_free_variables(expression.left, dict(), set()):
-                        if expression.right.var not in free_variables:
+                    if expression.right.var.val not in get_free_variables(expression.left, dict(), set()):
+                        if expression.right.var.val not in free_variables:
                             check = 3, tmp
                         else:
                             error_string = "[Применение правил с кватором всеобщности, используещее свободную переменную " \
@@ -65,8 +79,8 @@ def solve():
             if type(expression) is Implication and type(expression.left) is Exists:
                 tmp = Implication(expression.left.val, expression.right)
                 if tmp in expressions:
-                    if expression.left.var not in get_free_variables(expression.right, dict(), set()):
-                        if expression.left.var not in free_variables:
+                    if expression.left.var.val not in get_free_variables(expression.right, dict(), set()):
+                        if expression.left.var.val not in free_variables:
                             check = 4, tmp
                         else:
                             error_string = "[Применение правил с кватором существования, используещее свободную переменную " \
@@ -76,6 +90,7 @@ def solve():
                                        + expression.right.var.__str__() + "входит свободно.]"
 
         if check[0] == -1:
+            print("Вывод не корректен")
             print("Вывод некорректен, начиная с формулы №", line_number, ":", error_string, "\n", line, end="\n", file=fout)
             break
         else:
@@ -86,10 +101,11 @@ def solve():
     if check[0] != -1:
         print("Вывод корректен")
         semicolomn = 0
+
         for e in assumptions:
             if e != last_assumption:
                 print(e, sep="", end="", file=fout)
-                if semicolomn < len(assumptions) - 1:
+                if semicolomn < len(assumptions) - 2:
                     print(",", sep="", end="", file=fout)
                 semicolomn += 1
 
@@ -102,6 +118,9 @@ def solve():
             exists_proof = fexists.readlines()
             fexists.close()
             for i in range(len(expression_list)):
+                # print(i + 1, prior[i][0], file=fout)
+                # if i == 12:
+                #     print("oo")
                 if prior[i][0] == 0:
                     # axiom
                     print(Implication(expression_list[i], Implication(last_assumption, expression_list[i])), file=fout)
@@ -133,13 +152,14 @@ def solve():
                     print(tmp2, file=fout)
                 elif prior[i][0] == 3:
                     # Any
-                    mapping = {"A" : last_assumption, "B" : expression_list[i].left, "C" : expression_list[i].right.val}
-                    for str in any_proof:
+                    mapping = {"A" : last_assumption, "B" : expression_list[i].left, "C" : expression_list[i].right.val, "x" : expression_list[i].right.var}
+                    for i in range(len(any_proof)):
+                        str = any_proof[i]
                         tempExpr = createExpr(parser, str.rstrip(), mapping)
                         print(tempExpr, file=fout)
                 elif prior[i][0] == 4:
                     # Exists
-                    mapping = {"A" : last_assumption, "B" : expression_list[i].left.val, "C" : expression_list[i].right}
+                    mapping = {"A" : last_assumption, "B" : expression_list[i].left.val, "C" : expression_list[i].right, "x" : expression_list[i].left.var}
                     for str in exists_proof:
                         print(createExpr(parser, str, mapping), file=fout)
         else:

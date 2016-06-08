@@ -52,6 +52,9 @@ def subtract(expr, values):
         expr.left = subtract(expr.left, values)
         expr.right = subtract(expr.right, values)
 
+    if (type(expr) is Any or type(expr) is Exists) and expr.var.val == "x":
+        expr.var = values["x"].val
+
     expr.rehash()
     return expr
 
@@ -182,7 +185,7 @@ def free_subtract(template, exp, var, locked, dictionary):
     if type(template) is Var:
         if template != var:
             return template == exp
-        if template in locked:
+        if template.val in locked:
             return template == exp
         else:
             if template in dictionary:
@@ -196,9 +199,9 @@ def free_subtract(template, exp, var, locked, dictionary):
                 return True
     elif type(template) is type(exp):
         if type(template) is Any or type(template) is Exists:
-            locked.add(template.var)
+            locked.add(template.var.val)
             result = free_subtract(template.val, exp.val, var, locked, dictionary)
-            locked.remove(template.var)
+            locked.remove(template.var.val)
             return result
         elif type(template) is Predicate:
             if len(template.val) != len(exp.val):

@@ -227,10 +227,10 @@ def get_variables(exp, dictionary: dict):
         get_variables(exp.right, dictionary)
 
 
-def get_free_variables(exp, dictionary: dict, result : set):
+def get_free_variables(exp, dictionary: dict, result: set):
     if type(exp) is Var:
         if exp not in dictionary.keys():
-            result.add(exp)
+            result.add(exp.val)
     elif type(exp) is Predicate:
         for e in exp.val:
             get_free_variables(e, dictionary, result)
