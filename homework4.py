@@ -47,8 +47,8 @@ def solve():
             if type(expression) is Implication and type(expression.left) is Conjuction \
                     and type(expression.left.right) is Any and type(expression.left.right.val) is Implication:
                 if expression.left.right.var.val in get_free_variables(expression.right, dict(), set()) \
-                        and free_subtract(expression.right, expression.left.right.val.right, Var(expression.left.right.var), set(), dict()) \
-                        and free_subtract(expression.right, expression.left.left, Var(expression.left.right.var), set(), dict()) \
+                        and free_subtract(expression.right, expression.left.right.val.right, Var(expression.left.right.var), dict(), dict()) \
+                        and free_subtract(expression.right, expression.left.left, Var(expression.left.right.var), dict(), dict()) \
                         and expression.right == expression.left.right.val.left:
                     check = 0, None
 

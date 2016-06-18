@@ -181,7 +181,7 @@ def createProof(expr, proof):
             return False
 
 
-def free_subtract(template, exp, var, locked, dictionary):
+def free_subtract(template, exp, var, locked: dict, dictionary):
     if type(template) is Var:
         if template != var:
             return template == exp
@@ -199,9 +199,14 @@ def free_subtract(template, exp, var, locked, dictionary):
                 return True
     elif type(template) is type(exp):
         if type(template) is Any or type(template) is Exists:
-            locked.add(template.var.val)
+            if template.var.val not in locked:
+                locked[template.var.val] = 1
+            else:
+                locked[template.var.val] += 1
             result = free_subtract(template.val, exp.val, var, locked, dictionary)
-            locked.remove(template.var.val)
+            locked[template.var.val] -= 1
+            if locked[template.var.val] == 0:
+                locked.pop(template.var.val, None)
             return result
         elif type(template) is Predicate:
             if len(template.val) != len(exp.val):
@@ -223,13 +228,13 @@ def free_subtract(template, exp, var, locked, dictionary):
 def is_axiom_any(expr):
     if type(expr) is not Implication or type(expr.left) is not Any:
         return False
-    return free_subtract(expr.left.val, expr.right, expr.left.var, set(), dict())
+    return free_subtract(expr.left.val, expr.right, expr.left.var, dict(), dict())
 
 
 def is_axiom_exists(expr):
     if type(expr) is not Implication or type(expr.right) is not Exists:
         return False
-    return free_subtract(expr.right.val, expr.left, expr.right.var, set(), dict())
+    return free_subtract(expr.right.val, expr.left, expr.right.var, dict(), dict())
 
 
 def is_any_formal_axiom(expr):
